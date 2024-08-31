@@ -27,9 +27,11 @@ func findRoom(conn net.Conn, roomID string) (*Room, error) {
 func DoJoinRoom(conn net.Conn, roomID string) {
 
 	targetRoom, err := findRoom(conn, roomID)
+	targetRoom.addRoomUsers(conn)
 
 	if err != nil {
-		fmt.Printf("Room %v not found: %v", roomID, err)
+		nillRoomError := fmt.Sprintf("Room %v not found: %v", roomID, err)
+		conn.Write([]byte(nillRoomError))
 		return
 	}
 
@@ -39,8 +41,7 @@ func DoJoinRoom(conn net.Conn, roomID string) {
 	if user == nil {
 		fmt.Printf("User not found")
 	}
-
-	fmt.Printf("%s has joined the room\r\n", user)
+	joinMsg := fmt.Sprintf("%s has joined the room\r\n", user)
+	conn.Write([]byte(joinMsg))
 
 }
-

@@ -4,6 +4,8 @@ type Room struct {
 	Connections []net.Conn
 }
 
+var globalRooms []Room
+
 func (r *Room) addRoomUsers(conn net.Conn) {
 	r.Connections = append(r.Connections, conn)
 }

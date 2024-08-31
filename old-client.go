@@ -125,7 +125,7 @@ func processCommand(data string) {
 }
 
 func main() {
-	address := "127.0.0.1:90"
+	address := ":90"
 	tcpAddress, err := net.ResolveTCPAddr("tcp", address)
 
 	if err != nil {

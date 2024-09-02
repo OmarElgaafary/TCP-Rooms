@@ -100,12 +100,13 @@ func DoCreateRoom(conn net.Conn, roomId string) {
 
 func DoListRoom(conn net.Conn) {
 	jsonString, _ := json.Marshal(globalRooms)
+	jsonString = append(jsonString, '\n')
 	conn.Write(jsonString)
 }
 
 func DoJoinRoom(conn net.Conn, roomID string) {
 
-	targetRoom, err := findRoom(conn, roomID)
+	targetRoom, err := findRoom(roomID)
 	targetRoom.addRoomUsers(conn)
 
 	if err != nil {
@@ -125,7 +126,36 @@ func DoJoinRoom(conn net.Conn, roomID string) {
 
 }
 
-func DoLeaveRoom(conn net.Conn, roomId string) {}
+func DoLeaveRoom(conn net.Conn, roomId string) {
+
+	targetRoom, err := findRoom(roomId)
+
+	if err != nil {
+		nillRoomError := fmt.Sprintf("Room %v not found", roomId)
+		conn.Write([]byte(nillRoomError))
+	}
+
+	err = targetRoom.removeRoomUsers(conn)
+
+	if err != nil {
+		removeUserError := fmt.Sprintf("Error while leaving room %v", roomId)
+		conn.Write([]byte(removeUserError))
+	}
+
+	if len(targetRoom.UserConnections) == 0 {
+		removeNilRoom(roomId)
+	}
+
+	user := GetUserByConnection(conn)
+	if user == nil {
+		userNotFoundError := fmt.Sprintf("User not found")
+		conn.Write([]byte(userNotFoundError))
+	}
+
+	userLeft := fmt.Sprintf("%v has left the room", user)
+	conn.Write([]byte(userLeft))
+
+}
 
 func SendMessage(conn net.Conn, msg string) {
 	user := GetUserByConnection(conn)
@@ -177,20 +207,55 @@ func GetUserConnection(username string) net.Conn {
 	return nil
 }
 
-func findRoom(conn net.Conn, roomID string) (*Room, error) {
+func findRoom(roomID string) (*Room, error) {
 	for _, room := range globalRooms {
 		if room.ID == roomID {
 			return &room, nil
-		} else {
-			fmt.Println("Room Not Found")
 		}
 	}
 
+	fmt.Printf("room not found")
 	return nil, errors.New("room not found")
 }
 
 func (r *Room) addRoomUsers(conn net.Conn) {
 	r.UserConnections = append(r.UserConnections, conn)
+}
+
+func (r *Room) removeRoomUsers(conn net.Conn) error {
+	index := -1
+
+	for i, j := range r.UserConnections {
+		if j == conn {
+			index = i
+			break
+		}
+	}
+
+	if index == -1 {
+		return errors.New("connection not found")
+	}
+
+	r.UserConnections = append(r.UserConnections[:index], r.UserConnections[:index+1]...)
+	return nil
+}
+
+func removeNilRoom(roomID string) {
+
+	index := -1
+
+	for i, targetRoom := range globalRooms {
+		if targetRoom.ID == roomID {
+			index = i
+			break
+		}
+	}
+
+	if index == -1 {
+		return
+	}
+
+	globalRooms = append(globalRooms[:index], globalRooms[:index+1]...)
 }
 
 func main() {

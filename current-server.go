@@ -262,7 +262,7 @@ func main() {
 
 	connections = make(map[net.Conn]*User, 0)
 
-	address := "192.168.1.7:90"
+	address := ":90"
 
 	listener, _ := net.Listen("tcp", address)
 	defer listener.Close()
